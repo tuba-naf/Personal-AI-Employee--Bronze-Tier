@@ -29,14 +29,18 @@ jobs:
         run: pip install feedparser python-dotenv watchdog requests
 
       - name: Create .env from GitHub Secrets
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
         run: |
-          printf "VAULT_PATH=%s/Vault\n" "$GITHUB_WORKSPACE" > .env
-          printf "DRY_RUN=false\n" >> .env
-          printf "SMTP_HOST=smtp.gmail.com\n" >> .env
-          printf "SMTP_PORT=587\n" >> .env
-          printf "SMTP_USER=%s\n" "${{ secrets.SMTP_USER }}" >> .env
-          printf "SMTP_PASSWORD=%s\n" "${{ secrets.SMTP_PASSWORD }}" >> .env
-          printf "REVIEWER_EMAIL=%s\n" "${{ secrets.REVIEWER_EMAIL }}" >> .env
+          echo "VAULT_PATH=$GITHUB_WORKSPACE/Vault" > .env
+          echo "DRY_RUN=false" >> .env
+          echo "SMTP_HOST=smtp.gmail.com" >> .env
+          echo "SMTP_PORT=587" >> .env
+          echo "SMTP_USER=$SMTP_USER" >> .env
+          echo "SMTP_PASSWORD=$SMTP_PASSWORD" >> .env
+          echo "REVIEWER_EMAIL=$REVIEWER_EMAIL" >> .env
           echo "--- .env preview (no secrets) ---"
           grep -v "PASSWORD\|USER\|EMAIL" .env
 
@@ -66,14 +70,18 @@ jobs:
         run: pip install feedparser python-dotenv watchdog requests
 
       - name: Create .env from GitHub Secrets
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
         run: |
-          printf "VAULT_PATH=%s/Vault\n" "$GITHUB_WORKSPACE" > .env
-          printf "DRY_RUN=false\n" >> .env
-          printf "SMTP_HOST=smtp.gmail.com\n" >> .env
-          printf "SMTP_PORT=587\n" >> .env
-          printf "SMTP_USER=%s\n" "${{ secrets.SMTP_USER }}" >> .env
-          printf "SMTP_PASSWORD=%s\n" "${{ secrets.SMTP_PASSWORD }}" >> .env
-          printf "REVIEWER_EMAIL=%s\n" "${{ secrets.REVIEWER_EMAIL }}" >> .env
+          echo "VAULT_PATH=$GITHUB_WORKSPACE/Vault" > .env
+          echo "DRY_RUN=false" >> .env
+          echo "SMTP_HOST=smtp.gmail.com" >> .env
+          echo "SMTP_PORT=587" >> .env
+          echo "SMTP_USER=$SMTP_USER" >> .env
+          echo "SMTP_PASSWORD=$SMTP_PASSWORD" >> .env
+          echo "REVIEWER_EMAIL=$REVIEWER_EMAIL" >> .env
           echo "--- .env preview (no secrets) ---"
           grep -v "PASSWORD\|USER\|EMAIL" .env
 
