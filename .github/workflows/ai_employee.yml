@@ -1,11 +1,7 @@
-name: AI Employee Wavy — Automated Content & Email
+name: AI Employee Wavy — Email Delivery
 
 on:
   schedule:
-    # Watchers — 3x daily (Pakistan time UTC+5: 8AM=3AM UTC, 1PM=8AM UTC, 6PM=1PM UTC)
-    - cron: '0 3 * * *'   # 8:00 AM PKT
-    - cron: '0 8 * * *'   # 1:00 PM PKT
-    - cron: '0 13 * * *'  # 6:00 PM PKT
     # News email — daily at 7:00 PM PKT (2:00 PM UTC)
     - cron: '0 14 * * *'
     # LinkedIn + Instagram email — every 2 days at 7:30 PM PKT (2:30 PM UTC)
@@ -15,64 +11,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-watchers:
-    name: Generate Content Drafts
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      github.event.schedule == '0 3 * * *'  ||
-      github.event.schedule == '0 8 * * *'  ||
-      github.event.schedule == '0 13 * * *'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install feedparser python-dotenv watchdog requests
-
-      - name: Create .env from GitHub Secrets
-        run: |
-          cat > .env << EOF
-          VAULT_PATH=${{ github.workspace }}/Vault
-          DRY_RUN=false
-          SMTP_HOST=smtp.gmail.com
-          SMTP_PORT=587
-          SMTP_USER=${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          REVIEWER_EMAIL=${{ secrets.REVIEWER_EMAIL }}
-          LINKEDIN_CHECK_INTERVAL=14400
-          INSTAGRAM_CHECK_INTERVAL=14400
-          NEWS_CHECK_INTERVAL=7200
-          EOF
-
-      - name: Run watchers (generate drafts)
-        run: python Vault/Watchers/scheduled_run.py
-
-      - name: Commit new drafts to repository
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          git config user.name "AI Employee Wavy"
-          git config user.email "ai-employee@theweavingseeds.com"
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
-          git add Vault/Inbox/ Vault/Needs_Action/ Vault/Plans/ Vault/Logs/ Vault/Dashboard.md
-          git diff --staged --quiet || git commit -m "🌱 Auto-draft: $(date +'%Y-%m-%d %H:%M') PKT"
-          git push
-
   send-news-email:
     name: Send News Email
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      github.event.schedule == '0 14 * * *'
     runs-on: ubuntu-latest
 
     steps:
@@ -104,10 +44,7 @@ jobs:
         run: python Vault/Watchers/email_drafts.py --platform news
 
   send-social-email:
-    name: Send LinkedIn + Instagram Email
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      github.event.schedule == '30 14 */2 * *'
+    name: Send LinkedIn and Instagram Email
     runs-on: ubuntu-latest
 
     steps:
@@ -135,5 +72,5 @@ jobs:
           REVIEWER_EMAIL=${{ secrets.REVIEWER_EMAIL }}
           EOF
 
-      - name: Send LinkedIn + Instagram email
+      - name: Send LinkedIn and Instagram email
         run: python Vault/Watchers/email_drafts.py --platform linkedin instagram
