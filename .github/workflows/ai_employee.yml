@@ -15,9 +15,9 @@ jobs:
       DRY_RUN: "false"
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: "587"
-      SMTP_USER: Sherazmaher373@gmail.com
+      SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      REVIEWER_EMAIL: Sherazmaher373@gmail.com
+      REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
 
     steps:
       - name: Checkout repository
@@ -43,9 +43,9 @@ jobs:
       DRY_RUN: "false"
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: "587"
-      SMTP_USER: Sherazmaher373@gmail.com
+      SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      REVIEWER_EMAIL: Sherazmaher373@gmail.com
+      REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
 
     steps:
       - name: Checkout repository

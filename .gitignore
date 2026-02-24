@@ -16,6 +16,9 @@ Vault/Logs/
 
 # Watcher state files (local runtime state)
 Vault/Watchers/.*.json
+
+# Watcher runtime logs (contain email addresses)
+Vault/Watchers/*.log
 credentials.json
 *.key
 *.pem
