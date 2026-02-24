@@ -1,0 +1,39 @@
+# Secrets
+.env
+
+# Local learning/reference documents
+HOW_THIS_PROJECT_WORKS.txt
+
+# Claude Code local config (machine-specific)
+.claude/
+skills-lock.json
+
+# Local Windows helper scripts
+create_tasks.cmd
+
+# Vault logs (auto-generated daily, not needed in repo)
+Vault/Logs/
+
+# Watcher state files (local runtime state)
+Vault/Watchers/.*.json
+credentials.json
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Obsidian internal
+.obsidian/
