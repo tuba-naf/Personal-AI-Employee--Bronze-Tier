@@ -1,13 +1,9 @@
-name: AI Employee Wavy — Email Delivery
+name: AI Employee Wavy - Email Delivery
 
 on:
   schedule:
-    # News email — daily at 7:00 PM PKT (2:00 PM UTC)
     - cron: '0 14 * * *'
-    # LinkedIn + Instagram email — every 2 days at 7:30 PM PKT (2:30 PM UTC)
     - cron: '30 14 */2 * *'
-
-  # Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
 
 jobs:
@@ -16,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VAULT_PATH: ${{ github.workspace }}/Vault
-      DRY_RUN: false
+      DRY_RUN: "false"
       SMTP_HOST: smtp.gmail.com
-      SMTP_PORT: 587
+      SMTP_PORT: "587"
       SMTP_USER: Sherazmaher373@gmail.com
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       REVIEWER_EMAIL: Sherazmaher373@gmail.com
@@ -31,25 +27,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-          cache: 'pip'
+          cache: pip
 
       - name: Install dependencies
         run: pip install feedparser python-dotenv watchdog requests
-
-      - name: Check drafts exist
-        run: |
-          echo "--- Files in Needs_Action ---"
-          ls -la Vault/Needs_Action/ || echo "Needs_Action folder not found"
-
-      - name: Debug secrets (lengths only, no values)
-        run: |
-          python -c "
-import os
-print('SMTP_USER set:', bool(os.getenv('SMTP_USER')), '| length:', len(os.getenv('SMTP_USER','')))
-print('SMTP_PASSWORD set:', bool(os.getenv('SMTP_PASSWORD')), '| length:', len(os.getenv('SMTP_PASSWORD','')))
-print('REVIEWER_EMAIL set:', bool(os.getenv('REVIEWER_EMAIL')), '| length:', len(os.getenv('REVIEWER_EMAIL','')))
-print('DRY_RUN value:', os.getenv('DRY_RUN'))
-"
 
       - name: Send News email
         run: python Vault/Watchers/email_drafts.py --platform news
@@ -59,9 +40,9 @@ print('DRY_RUN value:', os.getenv('DRY_RUN'))
     runs-on: ubuntu-latest
     env:
       VAULT_PATH: ${{ github.workspace }}/Vault
-      DRY_RUN: false
+      DRY_RUN: "false"
       SMTP_HOST: smtp.gmail.com
-      SMTP_PORT: 587
+      SMTP_PORT: "587"
       SMTP_USER: Sherazmaher373@gmail.com
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       REVIEWER_EMAIL: Sherazmaher373@gmail.com
@@ -74,15 +55,10 @@ print('DRY_RUN value:', os.getenv('DRY_RUN'))
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-          cache: 'pip'
+          cache: pip
 
       - name: Install dependencies
         run: pip install feedparser python-dotenv watchdog requests
-
-      - name: Check drafts exist
-        run: |
-          echo "--- Files in Needs_Action ---"
-          ls -la Vault/Needs_Action/ || echo "Needs_Action folder not found"
 
       - name: Send LinkedIn and Instagram email
         run: python Vault/Watchers/email_drafts.py --platform linkedin instagram
