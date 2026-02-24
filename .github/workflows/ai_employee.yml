@@ -41,6 +41,16 @@ jobs:
           echo "--- Files in Needs_Action ---"
           ls -la Vault/Needs_Action/ || echo "Needs_Action folder not found"
 
+      - name: Debug secrets (lengths only, no values)
+        run: |
+          python -c "
+import os
+print('SMTP_USER set:', bool(os.getenv('SMTP_USER')), '| length:', len(os.getenv('SMTP_USER','')))
+print('SMTP_PASSWORD set:', bool(os.getenv('SMTP_PASSWORD')), '| length:', len(os.getenv('SMTP_PASSWORD','')))
+print('REVIEWER_EMAIL set:', bool(os.getenv('REVIEWER_EMAIL')), '| length:', len(os.getenv('REVIEWER_EMAIL','')))
+print('DRY_RUN value:', os.getenv('DRY_RUN'))
+"
+
       - name: Send News email
         run: python Vault/Watchers/email_drafts.py --platform news
 
