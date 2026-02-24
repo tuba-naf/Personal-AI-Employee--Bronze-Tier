@@ -14,6 +14,14 @@ jobs:
   send-news-email:
     name: Send News Email
     runs-on: ubuntu-latest
+    env:
+      VAULT_PATH: ${{ github.workspace }}/Vault
+      DRY_RUN: false
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
 
     steps:
       - name: Checkout repository
@@ -27,22 +35,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install feedparser python-dotenv watchdog requests
-
-      - name: Create .env from GitHub Secrets
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
-        run: |
-          echo "VAULT_PATH=$GITHUB_WORKSPACE/Vault" > .env
-          echo "DRY_RUN=false" >> .env
-          echo "SMTP_HOST=smtp.gmail.com" >> .env
-          echo "SMTP_PORT=587" >> .env
-          echo "SMTP_USER=$SMTP_USER" >> .env
-          echo "SMTP_PASSWORD=$SMTP_PASSWORD" >> .env
-          echo "REVIEWER_EMAIL=$REVIEWER_EMAIL" >> .env
-          echo "--- .env preview (no secrets) ---"
-          grep -v "PASSWORD\|USER\|EMAIL" .env
 
       - name: Check drafts exist
         run: |
@@ -55,6 +47,14 @@ jobs:
   send-social-email:
     name: Send LinkedIn and Instagram Email
     runs-on: ubuntu-latest
+    env:
+      VAULT_PATH: ${{ github.workspace }}/Vault
+      DRY_RUN: false
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
 
     steps:
       - name: Checkout repository
@@ -68,22 +68,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install feedparser python-dotenv watchdog requests
-
-      - name: Create .env from GitHub Secrets
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
-        run: |
-          echo "VAULT_PATH=$GITHUB_WORKSPACE/Vault" > .env
-          echo "DRY_RUN=false" >> .env
-          echo "SMTP_HOST=smtp.gmail.com" >> .env
-          echo "SMTP_PORT=587" >> .env
-          echo "SMTP_USER=$SMTP_USER" >> .env
-          echo "SMTP_PASSWORD=$SMTP_PASSWORD" >> .env
-          echo "REVIEWER_EMAIL=$REVIEWER_EMAIL" >> .env
-          echo "--- .env preview (no secrets) ---"
-          grep -v "PASSWORD\|USER\|EMAIL" .env
 
       - name: Check drafts exist
         run: |
