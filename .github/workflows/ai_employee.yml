@@ -30,15 +30,15 @@ jobs:
 
       - name: Create .env from GitHub Secrets
         run: |
-          cat > .env << EOF
-          VAULT_PATH=${{ github.workspace }}/Vault
-          DRY_RUN=false
-          SMTP_HOST=smtp.gmail.com
-          SMTP_PORT=587
-          SMTP_USER=${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          REVIEWER_EMAIL=${{ secrets.REVIEWER_EMAIL }}
-          EOF
+          printf "VAULT_PATH=%s/Vault\n" "$GITHUB_WORKSPACE" > .env
+          printf "DRY_RUN=false\n" >> .env
+          printf "SMTP_HOST=smtp.gmail.com\n" >> .env
+          printf "SMTP_PORT=587\n" >> .env
+          printf "SMTP_USER=%s\n" "${{ secrets.SMTP_USER }}" >> .env
+          printf "SMTP_PASSWORD=%s\n" "${{ secrets.SMTP_PASSWORD }}" >> .env
+          printf "REVIEWER_EMAIL=%s\n" "${{ secrets.REVIEWER_EMAIL }}" >> .env
+          echo "--- .env preview (no secrets) ---"
+          grep -v "PASSWORD\|USER\|EMAIL" .env
 
       - name: Send News email
         run: python Vault/Watchers/email_drafts.py --platform news
@@ -62,15 +62,15 @@ jobs:
 
       - name: Create .env from GitHub Secrets
         run: |
-          cat > .env << EOF
-          VAULT_PATH=${{ github.workspace }}/Vault
-          DRY_RUN=false
-          SMTP_HOST=smtp.gmail.com
-          SMTP_PORT=587
-          SMTP_USER=${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          REVIEWER_EMAIL=${{ secrets.REVIEWER_EMAIL }}
-          EOF
+          printf "VAULT_PATH=%s/Vault\n" "$GITHUB_WORKSPACE" > .env
+          printf "DRY_RUN=false\n" >> .env
+          printf "SMTP_HOST=smtp.gmail.com\n" >> .env
+          printf "SMTP_PORT=587\n" >> .env
+          printf "SMTP_USER=%s\n" "${{ secrets.SMTP_USER }}" >> .env
+          printf "SMTP_PASSWORD=%s\n" "${{ secrets.SMTP_PASSWORD }}" >> .env
+          printf "REVIEWER_EMAIL=%s\n" "${{ secrets.REVIEWER_EMAIL }}" >> .env
+          echo "--- .env preview (no secrets) ---"
+          grep -v "PASSWORD\|USER\|EMAIL" .env
 
       - name: Send LinkedIn and Instagram email
         run: python Vault/Watchers/email_drafts.py --platform linkedin instagram
