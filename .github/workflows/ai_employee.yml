@@ -19,9 +19,9 @@ jobs:
       DRY_RUN: false
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: 587
-      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_USER: Sherazmaher373@gmail.com
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
+      REVIEWER_EMAIL: Sherazmaher373@gmail.com
 
     steps:
       - name: Checkout repository
@@ -62,9 +62,9 @@ print('DRY_RUN value:', os.getenv('DRY_RUN'))
       DRY_RUN: false
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: 587
-      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_USER: Sherazmaher373@gmail.com
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      REVIEWER_EMAIL: ${{ secrets.REVIEWER_EMAIL }}
+      REVIEWER_EMAIL: Sherazmaher373@gmail.com
 
     steps:
       - name: Checkout repository
