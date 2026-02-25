@@ -145,7 +145,7 @@ Write a **500+ word** LinkedIn post following the **{cycle.replace('_', ' ').tit
 
 ## Draft Content
 
-_Draft pending generation..._
+{self.generate_draft_content(item, cycle, "LinkedIn", self._get_cycle_instructions(cycle), 500)}
 
 ## Verification Checklist
 - [ ] Facts and statistics are accurate and cited
