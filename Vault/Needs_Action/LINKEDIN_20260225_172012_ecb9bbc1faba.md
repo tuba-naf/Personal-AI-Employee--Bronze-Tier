@@ -1,6 +1,6 @@
 ---
 platform: LinkedIn
-status: pending
+status: emailed
 cycle_type: local_problem
 scope: local
 source_title: "Pakistan 'well-positioned' for IMF review to unlock $1.2b fund: FinMin"
