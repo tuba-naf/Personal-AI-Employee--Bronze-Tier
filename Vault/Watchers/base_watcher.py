@@ -3,12 +3,15 @@ Base Watcher - Template for all content watchers.
 All watchers inherit from this class and implement check_for_updates() and create_content_file().
 """
 
+import os
 import time
 import logging
 import json
 from pathlib import Path
 from abc import ABC, abstractmethod
 from datetime import datetime
+
+import anthropic
 
 # --- Strict environment/climate keyword matching ---
 # PRIMARY: Article MUST contain at least 1 of these (core environmental terms)
@@ -212,6 +215,56 @@ auto_refresh: true
 """
         dashboard_path.write_text(content, encoding="utf-8")
         self.logger.info("Dashboard updated")
+
+    def generate_draft_content(self, item: dict, cycle: str, platform: str, cycle_instructions: str, word_target: int) -> str:
+        """Call Claude API to generate actual draft content."""
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            self.logger.warning("ANTHROPIC_API_KEY not set — returning empty draft")
+            return "_Draft pending generation — ANTHROPIC_API_KEY not configured._"
+
+        client = anthropic.Anthropic(api_key=api_key)
+
+        platform_style = {
+            "LinkedIn": "professional LinkedIn post (500+ words, formal tone, include statistics and references, end with a call to action)",
+            "Instagram": "engaging Instagram caption (300+ words, conversational tone, include image suggestion and hashtags)",
+            "News": "news analysis article (600+ words, journalistic tone, include critique and hopeful angle, cite sources)",
+        }.get(platform, "content piece")
+
+        prompt = f"""You are an expert sustainability and climate change content writer for Pakistan.
+
+Write a complete, ready-to-publish {platform_style} based on the following source article.
+
+**Source Article:**
+- Title: {item['title']}
+- Summary: {item['summary']}
+- Published: {item['published']}
+- Link: {item['link']}
+
+**Content Cycle:** {cycle.replace('_', ' ').title()}
+
+**Requirements:**
+{cycle_instructions}
+
+**Important rules:**
+- Write {word_target}+ words of actual content — no placeholders or instructions
+- Include real statistics, case studies, and references where relevant
+- Always connect to Pakistan's environmental context
+- Write in a compelling, human voice — not robotic or generic
+- Do NOT include headings like "Draft Content" or meta-instructions — just the actual post/article
+
+Write the full content now:"""
+
+        try:
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return message.content[0].text
+        except Exception as e:
+            self.logger.error(f"Claude API error: {e}")
+            return f"_Draft generation failed: {e}_"
 
     def run(self):
         """Main loop — check for updates and create content files."""

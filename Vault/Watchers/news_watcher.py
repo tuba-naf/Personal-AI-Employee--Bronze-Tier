@@ -151,9 +151,8 @@ Write a news analysis following the **{cycle.replace('_', ' ').title()}** patter
 - If the story is global, include a paragraph connecting to Pakistan's environmental context
 
 ## Draft Content
-> **[AI: Generate the full news analysis below based on the source and cycle type]**
 
-_Draft pending generation..._
+{self.generate_draft_content(item, cycle, "News", self._get_cycle_instructions(cycle), 600)}
 
 ## Key Facts to Verify
 - [ ] Statistics cited are from credible environmental sources

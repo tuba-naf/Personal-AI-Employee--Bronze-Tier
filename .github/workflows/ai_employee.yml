@@ -20,6 +20,7 @@ jobs:
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -34,7 +35,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install feedparser python-dotenv watchdog requests
+        run: pip install feedparser python-dotenv watchdog requests anthropic
 
       - name: Send News email
         run: python Vault/Watchers/email_drafts.py --platform news
@@ -59,6 +60,7 @@ jobs:
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -73,7 +75,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install feedparser python-dotenv watchdog requests
+        run: pip install feedparser python-dotenv watchdog requests anthropic
 
       - name: Send LinkedIn and Instagram email
         run: python Vault/Watchers/email_drafts.py --platform linkedin instagram

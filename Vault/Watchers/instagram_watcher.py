@@ -143,12 +143,8 @@ Write a **300+ word** Instagram caption following the **{cycle.replace('_', ' ')
 {self._get_cycle_instructions(cycle)}
 
 ## Draft Caption
-> **[AI: Generate the full Instagram caption below based on the source and cycle type]**
 
-_Draft pending generation..._
-
-## Image Suggestion
-> **image_prompt:** _[Describe a compelling visual that could accompany this caption]_
+{self.generate_draft_content(item, cycle, "Instagram", self._get_cycle_instructions(cycle), 300)}
 
 ## Suggested Hashtags
 #Pakistan #ClimateAction #Sustainability #Environment #GreenPakistan #SaveEarth #ClimateChange #RenewableEnergy #EcoFriendly
