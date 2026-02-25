@@ -116,7 +116,7 @@ class NewsWatcher(BaseWatcher):
         cycle = self.current_cycle_position
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"NEWS_{timestamp}_{item['id']}.md"
-        filepath = self.inbox / filename
+        filepath = self.needs_action / filename
 
         content = f"""---
 platform: News
