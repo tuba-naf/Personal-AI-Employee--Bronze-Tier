@@ -51,7 +51,8 @@ PLATFORM_PREFIXES = {
 
 
 def get_pending_drafts(vault_path: str, platforms: list[str]) -> list[dict]:
-    """Collect pending drafts from /Needs_Action/ for specified platforms."""
+    """Collect pending drafts from /Needs_Action/ for specified platforms.
+    Skips files already marked as emailed."""
     needs_action = Path(vault_path) / "Needs_Action"
     drafts = []
 
@@ -74,6 +75,11 @@ def get_pending_drafts(vault_path: str, platforms: list[str]) -> list[dict]:
                                 key, val = line.split(":", 1)
                                 metadata[key.strip()] = val.strip().strip('"')
 
+                # Skip files already emailed
+                if metadata.get("status") == "emailed":
+                    logger.info(f"Skipping already-emailed draft: {f.name}")
+                    continue
+
                 drafts.append({
                     "platform": platform.title(),
                     "filename": f.name,
@@ -84,6 +90,24 @@ def get_pending_drafts(vault_path: str, platforms: list[str]) -> list[dict]:
                     "status": metadata.get("status", "pending"),
                 })
     return drafts
+
+
+def mark_drafts_as_emailed(drafts: list[dict]):
+    """Update status to 'emailed' in frontmatter of each draft file."""
+    import re
+    for draft in drafts:
+        path = Path(draft["path"])
+        content = path.read_text(encoding="utf-8")
+        # Replace status field in frontmatter
+        updated = re.sub(
+            r"^(status:\s*).*$",
+            r"\1emailed",
+            content,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        path.write_text(updated, encoding="utf-8")
+        logger.info(f"Marked as emailed: {draft['filename']}")
 
 
 def _cycle_badge_color(cycle_type: str) -> str:
@@ -405,6 +429,8 @@ def main():
     logger.info(f"Found {len(drafts)} pending draft(s)")
     msg = build_email(drafts, args.platform)
     success = send_email(msg)
+    if success and not DRY_RUN:
+        mark_drafts_as_emailed(drafts)
     log_email_action(vault_path, args.platform, len(drafts), success)
 
 

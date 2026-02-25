@@ -35,6 +35,14 @@ jobs:
       - name: Send News email
         run: python Vault/Watchers/email_drafts.py --platform news
 
+      - name: Commit emailed status back to repo
+        run: |
+          git config user.name "AI Employee Wavy"
+          git config user.email "actions@github.com"
+          git add Vault/Needs_Action/
+          git diff --staged --quiet || git commit -m "chore: mark news drafts as emailed [skip ci]"
+          git push
+
   send-social-email:
     name: Send LinkedIn and Instagram Email
     runs-on: ubuntu-latest
@@ -62,3 +70,11 @@ jobs:
 
       - name: Send LinkedIn and Instagram email
         run: python Vault/Watchers/email_drafts.py --platform linkedin instagram
+
+      - name: Commit emailed status back to repo
+        run: |
+          git config user.name "AI Employee Wavy"
+          git config user.email "actions@github.com"
+          git add Vault/Needs_Action/
+          git diff --staged --quiet || git commit -m "chore: mark social drafts as emailed [skip ci]"
+          git push
