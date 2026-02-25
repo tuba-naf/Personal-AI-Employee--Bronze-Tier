@@ -87,7 +87,7 @@ class NewsWatcher(BaseWatcher):
         for feed_url in feeds:
             try:
                 feed = feedparser.parse(feed_url)
-                for entry in feed.entries[:15]:
+                for entry in feed.entries[:50]:
                     title = entry.get("title", "")
                     summary = entry.get("summary", entry.get("description", ""))
                     link = entry.get("link", "")
@@ -152,7 +152,7 @@ Write a news analysis following the **{cycle.replace('_', ' ').title()}** patter
 
 ## Draft Content
 
-{self.generate_draft_content(item, cycle, "News", self._get_cycle_instructions(cycle), 600)}
+_Draft pending generation..._
 
 ## Key Facts to Verify
 - [ ] Statistics cited are from credible environmental sources

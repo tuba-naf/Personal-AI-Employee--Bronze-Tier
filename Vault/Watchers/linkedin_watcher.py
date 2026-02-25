@@ -86,7 +86,7 @@ class LinkedInWatcher(BaseWatcher):
         for feed_url in feeds:
             try:
                 feed = feedparser.parse(feed_url)
-                for entry in feed.entries[:15]:
+                for entry in feed.entries[:50]:
                     title = entry.get("title", "")
                     summary = entry.get("summary", entry.get("description", ""))
                     link = entry.get("link", "")
@@ -145,7 +145,7 @@ Write a **500+ word** LinkedIn post following the **{cycle.replace('_', ' ').tit
 
 ## Draft Content
 
-{self.generate_draft_content(item, cycle, "LinkedIn", self._get_cycle_instructions(cycle), 500)}
+_Draft pending generation..._
 
 ## Verification Checklist
 - [ ] Facts and statistics are accurate and cited

@@ -85,7 +85,7 @@ class InstagramWatcher(BaseWatcher):
         for feed_url in feeds:
             try:
                 feed = feedparser.parse(feed_url)
-                for entry in feed.entries[:15]:
+                for entry in feed.entries[:50]:
                     title = entry.get("title", "")
                     summary = entry.get("summary", entry.get("description", ""))
                     link = entry.get("link", "")
@@ -144,7 +144,10 @@ Write a **300+ word** Instagram caption following the **{cycle.replace('_', ' ')
 
 ## Draft Caption
 
-{self.generate_draft_content(item, cycle, "Instagram", self._get_cycle_instructions(cycle), 300)}
+_Draft pending generation..._
+
+## Image Suggestion
+> **image_prompt:** _[Describe a compelling visual that could accompany this caption]_
 
 ## Suggested Hashtags
 #Pakistan #ClimateAction #Sustainability #Environment #GreenPakistan #SaveEarth #ClimateChange #RenewableEnergy #EcoFriendly
