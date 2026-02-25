@@ -10,6 +10,8 @@ jobs:
   send-news-email:
     name: Send News Email
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       VAULT_PATH: ${{ github.workspace }}/Vault
       DRY_RUN: "false"
@@ -22,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -46,6 +50,8 @@ jobs:
   send-social-email:
     name: Send LinkedIn and Instagram Email
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       VAULT_PATH: ${{ github.workspace }}/Vault
       DRY_RUN: "false"
@@ -58,6 +64,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
