@@ -44,8 +44,7 @@ jobs:
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
           git add Vault/Needs_Action/
-          git diff --staged --quiet || git commit -m "chore: mark news drafts as emailed [skip ci]"
-          git push
+          git diff --staged --quiet || (git commit -m "chore: mark news drafts as emailed [skip ci]" && git pull --rebase && git push)
 
   send-social-email:
     name: Send LinkedIn and Instagram Email
@@ -84,5 +83,4 @@ jobs:
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
           git add Vault/Needs_Action/
-          git diff --staged --quiet || git commit -m "chore: mark social drafts as emailed [skip ci]"
-          git push
+          git diff --staged --quiet || (git commit -m "chore: mark social drafts as emailed [skip ci]" && git pull --rebase && git push)
