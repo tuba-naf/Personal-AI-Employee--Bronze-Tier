@@ -107,6 +107,33 @@ class InstagramWatcher(BaseWatcher):
             except Exception as e:
                 self.logger.warning(f"Failed to fetch feed {feed_url}: {e}")
 
+        # Fallback: if no local articles found, try global feeds
+        if not items and cycle in ("local_problem", "local_hopeful"):
+            self.logger.info(f"No local articles found for {cycle}, falling back to global feeds")
+            for feed_url in GLOBAL_FEEDS:
+                try:
+                    feed = feedparser.parse(feed_url)
+                    for entry in feed.entries[:50]:
+                        title = entry.get("title", "")
+                        summary = entry.get("summary", entry.get("description", ""))
+                        link = entry.get("link", "")
+                        published = entry.get("published", "")
+                        combined = f"{title} {summary}"
+                        if is_environment_relevant(combined):
+                            item_id = hashlib.md5(title.encode()).hexdigest()[:12]
+                            if item_id not in self.state.get("processed_ids", []):
+                                items.append({
+                                    "id": item_id,
+                                    "title": title,
+                                    "summary": summary,
+                                    "link": link,
+                                    "published": published,
+                                    "source": feed_url,
+                                    "scope": "local",
+                                })
+                except Exception as e:
+                    self.logger.warning(f"Failed to fetch feed {feed_url}: {e}")
+
         return items[:1] if items else []
 
     def create_content_file(self, item) -> Path:
