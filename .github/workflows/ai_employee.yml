@@ -7,9 +7,46 @@ on:
   workflow_dispatch:
 
 jobs:
+  generate-content:
+    name: Generate Fresh Content Drafts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VAULT_PATH: ${{ github.workspace }}/Vault
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install feedparser python-dotenv watchdog requests openai
+
+      - name: Generate new content drafts
+        run: |
+          cd Vault/Watchers
+          python scheduled_run.py
+
+      - name: Commit new drafts to repo
+        run: |
+          git config user.name "AI Employee Wavy"
+          git config user.email "actions@github.com"
+          git add Vault/Needs_Action/ Vault/Plans/
+          git diff --staged --quiet || (git commit -m "chore: add fresh content drafts [skip ci]" && git push)
+
   send-news-email:
     name: Send News Email
     runs-on: ubuntu-latest
+    needs: generate-content
     permissions:
       contents: write
     env:
@@ -27,6 +64,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,6 +88,7 @@ jobs:
   send-social-email:
     name: Send LinkedIn and Instagram Email
     runs-on: ubuntu-latest
+    needs: generate-content
     permissions:
       contents: write
     env:
@@ -67,6 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
