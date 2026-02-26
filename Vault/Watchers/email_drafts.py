@@ -51,44 +51,50 @@ PLATFORM_PREFIXES = {
 
 
 def get_pending_drafts(vault_path: str, platforms: list[str]) -> list[dict]:
-    """Collect pending drafts from /Needs_Action/ for specified platforms.
+    """Collect drafts from /Needs_Action/ and /Completed/ for specified platforms.
     Skips files already marked as emailed."""
-    needs_action = Path(vault_path) / "Needs_Action"
+    folders = [
+        Path(vault_path) / "Needs_Action",
+        Path(vault_path) / "Completed",
+    ]
     drafts = []
 
-    for f in sorted(needs_action.iterdir()):
-        if f.suffix != ".md":
+    for folder in folders:
+        if not folder.exists():
             continue
-        name_upper = f.name.upper()
-        for platform in platforms:
-            prefix = PLATFORM_PREFIXES.get(platform, "")
-            if name_upper.startswith(prefix):
-                content = f.read_text(encoding="utf-8")
+        for f in sorted(folder.iterdir()):
+            if f.suffix != ".md":
+                continue
+            name_upper = f.name.upper()
+            for platform in platforms:
+                prefix = PLATFORM_PREFIXES.get(platform, "")
+                if name_upper.startswith(prefix):
+                    content = f.read_text(encoding="utf-8")
 
-                # Extract metadata from frontmatter
-                metadata = {}
-                if content.startswith("---"):
-                    end = content.find("---", 3)
-                    if end != -1:
-                        for line in content[3:end].strip().split("\n"):
-                            if ":" in line:
-                                key, val = line.split(":", 1)
-                                metadata[key.strip()] = val.strip().strip('"')
+                    # Extract metadata from frontmatter
+                    metadata = {}
+                    if content.startswith("---"):
+                        end = content.find("---", 3)
+                        if end != -1:
+                            for line in content[3:end].strip().split("\n"):
+                                if ":" in line:
+                                    key, val = line.split(":", 1)
+                                    metadata[key.strip()] = val.strip().strip('"')
 
-                # Skip files already emailed
-                if metadata.get("status") == "emailed":
-                    logger.info(f"Skipping already-emailed draft: {f.name}")
-                    continue
+                    # Skip files already emailed
+                    if metadata.get("status") == "emailed":
+                        logger.info(f"Skipping already-emailed draft: {f.name}")
+                        continue
 
-                drafts.append({
-                    "platform": platform.title(),
-                    "filename": f.name,
-                    "path": str(f),
-                    "content": content,
-                    "metadata": metadata,
-                    "cycle_type": metadata.get("cycle_type", "unknown"),
-                    "status": metadata.get("status", "pending"),
-                })
+                    drafts.append({
+                        "platform": platform.title(),
+                        "filename": f.name,
+                        "path": str(f),
+                        "content": content,
+                        "metadata": metadata,
+                        "cycle_type": metadata.get("cycle_type", "unknown"),
+                        "status": metadata.get("status", "pending"),
+                    })
     return drafts
 
 
@@ -125,6 +131,19 @@ def _urgency_color(urgency: str) -> str:
     return "#c0392b" if urgency.lower() == "high" else "#27ae60"
 
 
+def _extract_draft_content(text: str) -> str:
+    """Extract only the Draft Content section from a markdown draft file."""
+    import re
+    match = re.search(r"^## Draft Content\s*\n", text, re.MULTILINE)
+    if not match:
+        return text  # fallback: return full text if section not found
+    content_start = match.end()
+    next_section = re.search(r"^## ", text[content_start:], re.MULTILINE)
+    if next_section:
+        return text[content_start:content_start + next_section.start()].strip()
+    return text[content_start:].strip()
+
+
 def _md_to_simple_html(text: str) -> str:
     """Convert basic markdown formatting to HTML for email body."""
     import re
@@ -156,7 +175,24 @@ def _md_to_simple_html(text: str) -> str:
     return "\n".join(result)
 
 
-def build_email(drafts: list[dict], platforms: list[str]) -> MIMEMultipart:
+def get_verified_count(vault_path: str, platforms: list[str]) -> int:
+    """Count verified drafts in /Completed/ for the given platforms."""
+    completed = Path(vault_path) / "Completed"
+    if not completed.exists():
+        return 0
+    count = 0
+    for f in completed.iterdir():
+        if f.suffix != ".md":
+            continue
+        name_upper = f.name.upper()
+        for platform in platforms:
+            prefix = PLATFORM_PREFIXES.get(platform, "")
+            if name_upper.startswith(prefix):
+                count += 1
+    return count
+
+
+def build_email(drafts: list[dict], platforms: list[str], verified_count: int = 0) -> MIMEMultipart:
     """Build a well-formatted HTML email with all pending drafts."""
     msg = MIMEMultipart("alternative")
     platform_label = " & ".join(p.title() for p in platforms)
@@ -181,16 +217,14 @@ def build_email(drafts: list[dict], platforms: list[str]) -> MIMEMultipart:
         source_link = meta.get("source_link", "#")
         badge_color = _cycle_badge_color(draft["cycle_type"])
         urg_color = _urgency_color(urgency)
-        status_label = "Verified &amp; Ready" if draft["status"] == "verified" else "Pending Verification"
-        status_color = "#27ae60" if draft["status"] == "verified" else "#e67e22"
-
-        # Strip frontmatter from content for display
+        # Strip frontmatter, then extract only the Draft Content section
         content_body = draft["content"]
         if content_body.startswith("---"):
             end = content_body.find("---", 3)
             if end != -1:
                 content_body = content_body[end + 3:].strip()
 
+        content_body = _extract_draft_content(content_body)
         content_html = _md_to_simple_html(content_body)
 
         draft_cards += f"""
@@ -199,33 +233,6 @@ def build_email(drafts: list[dict], platforms: list[str]) -> MIMEMultipart:
           <div style="background:#2c3e50;padding:16px 20px;display:flex;align-items:center;">
             <span style="background:{badge_color};color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">{cycle}</span>
             <span style="color:#ecf0f1;font-size:16px;font-weight:600;margin-left:12px;{font}">{draft['platform']} Draft #{i}</span>
-          </div>
-          <!-- Meta table -->
-          <div style="padding:16px 20px;background:#f8fafc;border-bottom:1px solid #e8edf2;">
-            <table style="border-collapse:collapse;width:100%;{font}font-size:13px;">
-              <tr>
-                <td style="padding:5px 14px 5px 0;color:#7f8c8d;font-weight:600;white-space:nowrap;">Platform</td>
-                <td style="padding:5px 0;color:#2c3e50;">{draft['platform']}</td>
-                <td style="padding:5px 14px 5px 24px;color:#7f8c8d;font-weight:600;white-space:nowrap;">Status</td>
-                <td style="padding:5px 0;"><span style="color:{status_color};font-weight:700;">{status_label}</span></td>
-              </tr>
-              <tr>
-                <td style="padding:5px 14px 5px 0;color:#7f8c8d;font-weight:600;white-space:nowrap;">Topic</td>
-                <td style="padding:5px 0;color:#2c3e50;" colspan="3">{topic}</td>
-              </tr>
-              <tr>
-                <td style="padding:5px 14px 5px 0;color:#7f8c8d;font-weight:600;white-space:nowrap;">Urgency</td>
-                <td style="padding:5px 0;"><span style="color:{urg_color};font-weight:700;">{urgency}</span></td>
-                <td style="padding:5px 14px 5px 24px;color:#7f8c8d;font-weight:600;white-space:nowrap;">File</td>
-                <td style="padding:5px 0;color:#7f8c8d;font-size:11px;">{draft['filename']}</td>
-              </tr>
-              <tr>
-                <td style="padding:5px 14px 5px 0;color:#7f8c8d;font-weight:600;white-space:nowrap;">Source</td>
-                <td style="padding:5px 0;color:#2c3e50;" colspan="3">
-                  <a href="{source_link}" style="color:#2980b9;text-decoration:none;">{source_title}</a>
-                </td>
-              </tr>
-            </table>
           </div>
           <!-- Draft content -->
           <div style="padding:20px 24px;{font}font-size:14px;color:#34495e;line-height:1.7;">
@@ -288,7 +295,7 @@ def build_email(drafts: list[dict], platforms: list[str]) -> MIMEMultipart:
                     <p style="margin:4px 0 0 0;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;">Total Drafts</p>
                   </td>
                   <td align="center" style="padding:0 10px;border-left:1px solid #ecf0f1;">
-                    <p style="margin:0;font-size:26px;font-weight:700;color:#27ae60;{font}">{sum(1 for d in drafts if d['status'] == 'verified')}</p>
+                    <p style="margin:0;font-size:26px;font-weight:700;color:#27ae60;{font}">{verified_count}</p>
                     <p style="margin:4px 0 0 0;font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;">Verified</p>
                   </td>
                   <td align="center" style="padding:0 10px;border-left:1px solid #ecf0f1;">
@@ -304,19 +311,6 @@ def build_email(drafts: list[dict], platforms: list[str]) -> MIMEMultipart:
           <tr>
             <td style="background:#f0f4f8;padding:24px 32px;">
               {draft_cards}
-            </td>
-          </tr>
-
-          <!-- Instructions -->
-          <tr>
-            <td style="background:#ffffff;padding:20px 32px;border-top:2px solid #e8edf2;border-bottom:1px solid #e8edf2;">
-              <p style="margin:0 0 10px 0;font-size:14px;font-weight:700;color:#2c3e50;{font}">Next Steps</p>
-              <ol style="margin:0;padding-left:20px;color:#34495e;font-size:13px;line-height:2.0;{font}">
-                <li>Review the draft content above for accuracy and tone</li>
-                <li>Make any edits needed in the Obsidian vault (<code style="background:#f8fafc;padding:1px 5px;border-radius:3px;">/Completed/</code>)</li>
-                <li>Approved drafts can be used on your social media or news platform</li>
-                <li>Reply to this email with feedback or additional topic requests</li>
-              </ol>
             </td>
           </tr>
 
@@ -427,7 +421,8 @@ def main():
         return
 
     logger.info(f"Found {len(drafts)} pending draft(s)")
-    msg = build_email(drafts, args.platform)
+    verified_count = sum(1 for d in drafts if d["status"] == "verified")
+    msg = build_email(drafts, args.platform, verified_count)
     success = send_email(msg)
     if success and not DRY_RUN:
         mark_drafts_as_emailed(drafts)

@@ -7,6 +7,7 @@ Designed to be called 2-3 times daily by Windows Task Scheduler.
 import sys
 import os
 import logging
+import argparse
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -27,17 +28,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ScheduledRun")
 
+ALL_WATCHERS = {
+    "linkedin": ("LinkedIn", LinkedInWatcher),
+    "instagram": ("Instagram", InstagramWatcher),
+    "news": ("News", NewsWatcher),
+}
 
-def run_once():
+
+def run_once(platforms=None):
     vault_path = os.getenv("VAULT_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     logger.info(f"=== Scheduled run started at {datetime.now().isoformat()} ===")
     logger.info(f"Vault: {vault_path}")
 
-    watchers = [
-        ("LinkedIn", LinkedInWatcher),
-        ("Instagram", InstagramWatcher),
-        ("News", NewsWatcher),
-    ]
+    selected = platforms if platforms else list(ALL_WATCHERS.keys())
+    watchers = [ALL_WATCHERS[p] for p in selected if p in ALL_WATCHERS]
 
     generated = []
 
@@ -49,6 +53,7 @@ def run_once():
             if items:
                 fp = w.create_content_file(items[0])
                 w.create_plan_file(fp.name)
+                verified = w.auto_verify_and_complete(fp)
                 w.advance_cycle()
                 w.update_dashboard()
                 generated.append({
@@ -56,8 +61,9 @@ def run_once():
                     "file": fp.name,
                     "cycle": cycle,
                     "title": items[0]["title"],
+                    "verified": verified,
                 })
-                logger.info(f"{name}: Draft created -> {fp.name} (cycle: {cycle})")
+                logger.info(f"{name}: Draft created -> {fp.name} (cycle: {cycle}, verified: {verified})")
             else:
                 logger.info(f"{name}: No new matching items found (cycle: {cycle})")
         except Exception as e:
@@ -68,4 +74,12 @@ def run_once():
 
 
 if __name__ == "__main__":
-    run_once()
+    parser = argparse.ArgumentParser(description="Run content watchers for specified platforms")
+    parser.add_argument(
+        "--platform",
+        nargs="+",
+        choices=["linkedin", "instagram", "news"],
+        help="Platforms to generate drafts for (default: all)",
+    )
+    args = parser.parse_args()
+    run_once(platforms=args.platform)

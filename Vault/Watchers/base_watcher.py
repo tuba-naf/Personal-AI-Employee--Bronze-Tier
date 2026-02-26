@@ -266,6 +266,77 @@ Write the full content now:"""
             self.logger.error(f"OpenAI API error: {e}")
             return f"_Draft generation failed: {e}_"
 
+    def auto_verify_and_complete(self, filepath: Path) -> bool:
+        """Fact-check a draft via OpenAI, mark as verified, and move to /Completed/."""
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        if not api_key:
+            self.logger.warning("OPENAI_API_KEY not set — skipping auto-verification")
+            return False
+
+        content = filepath.read_text(encoding="utf-8")
+
+        # Extract body (strip frontmatter)
+        body = content
+        if body.startswith("---"):
+            end = body.find("---", 3)
+            if end != -1:
+                body = body[end + 3:].strip()
+
+        client = OpenAI(api_key=api_key)
+        prompt = f"""You are a fact-checker for an AI content system focused on sustainability and climate change in Pakistan.
+
+Review the following draft content. For each factual claim, check if it is plausible and consistent with known facts about Pakistan's environment, climate, and sustainability.
+
+Return a brief verification summary in this exact format:
+- Status: Verified OR Needs Review
+- Verified Claims: [count of claims that appear factually sound]
+- Flagged Items: [list any specific claims that seem inaccurate or unverifiable, or write "None"]
+- Notes: [one sentence summary]
+
+Draft content:
+{body[:3000]}"""
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=400,
+            )
+            verification_result = response.choices[0].message.content
+        except Exception as e:
+            self.logger.error(f"Auto-verification API error: {e}")
+            return False
+
+        # Determine pass/fail from result
+        verified = "needs review" not in verification_result.lower()
+        new_status = "verified" if verified else "needs_review"
+
+        # Update frontmatter status
+        import re
+        updated = re.sub(r"^(status:\s*).*$", f"\\1{new_status}", content, count=1, flags=re.MULTILINE)
+
+        # Append verification section
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        updated += f"""
+## Verification Results
+{verification_result}
+- **Verified By:** AI Employee (auto)
+- **Verified On:** {now}
+"""
+        # Move to /Completed/ if verified, otherwise update in place
+        if verified:
+            completed_dir = self.vault_path / "Completed"
+            completed_dir.mkdir(exist_ok=True)
+            dest = completed_dir / filepath.name
+            dest.write_text(updated, encoding="utf-8")
+            filepath.unlink()
+            self.logger.info(f"Auto-verified and moved to /Completed/: {filepath.name}")
+        else:
+            filepath.write_text(updated, encoding="utf-8")
+            self.logger.info(f"Auto-verification flagged issues, kept in /Needs_Action/: {filepath.name}")
+
+        return verified
+
     def run(self):
         """Main loop — check for updates and create content files."""
         self.logger.info(f"Starting {self.__class__.__name__} (interval: {self.check_interval}s)")

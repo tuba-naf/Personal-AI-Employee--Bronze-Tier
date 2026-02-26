@@ -1,26 +1,44 @@
-name: AI Employee Wavy - Email Delivery
+name: AI Employee Wavy - Content & Email
 
 on:
   schedule:
-    - cron: '0 14 * * *'
-    - cron: '30 14 */2 * *'
+    - cron: '0 4 * * *'      # Daily at 9:00 AM PKT (4:00 AM UTC) — News
+    - cron: '0 4 */2 * *'    # Every 2 days at 9:00 AM PKT — LinkedIn & Instagram
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform(s) to run: news | linkedin instagram | all'
+        required: false
+        default: 'all'
 
+# ─────────────────────────────────────────────────────────────
+# NEWS — runs every day
+# ─────────────────────────────────────────────────────────────
 jobs:
-  generate-content:
-    name: Generate Fresh Content Drafts
+  news:
+    name: News — Daily Draft & Email
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.schedule == '0 4 * * *'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
       VAULT_PATH: ${{ github.workspace }}/Vault
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DRY_RUN: "false"
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: "587"
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,35 +47,53 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install feedparser python-dotenv watchdog requests openai
+        run: pip install feedparser python-dotenv openai
 
-      - name: Generate new content drafts
+      - name: Generate news draft
         run: |
           cd Vault/Watchers
-          python scheduled_run.py
+          python scheduled_run.py --platform news
 
-      - name: Commit new drafts to repo
+      - name: Commit draft to repo
         run: |
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
-          git add Vault/Needs_Action/ Vault/Plans/
-          git diff --staged --quiet || (git commit -m "chore: add fresh content drafts [skip ci]" && git push)
+          git add Vault/Needs_Action/ Vault/Completed/ Vault/Plans/
+          git diff --staged --quiet || (git commit -m "chore: add news draft [skip ci]" && git push)
 
-  send-news-email:
-    name: Send News Email
+      - name: Send news email
+        run: |
+          cd Vault/Watchers
+          python email_drafts.py --platform news
+
+      - name: Commit emailed status
+        run: |
+          git config user.name "AI Employee Wavy"
+          git config user.email "actions@github.com"
+          git pull --rebase
+          git add Vault/Needs_Action/ Vault/Completed/
+          git diff --staged --quiet || (git commit -m "chore: mark news as emailed [skip ci]" && git push)
+
+# ─────────────────────────────────────────────────────────────
+# SOCIAL — runs every 2 days
+# ─────────────────────────────────────────────────────────────
+  social:
+    name: LinkedIn & Instagram — Bi-Daily Draft & Email
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.schedule == '0 4 */2 * *'
     runs-on: ubuntu-latest
-    needs: generate-content
     permissions:
       contents: write
     env:
       VAULT_PATH: ${{ github.workspace }}/Vault
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       DRY_RUN: "false"
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: "587"
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -73,56 +109,29 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install feedparser python-dotenv watchdog requests openai
+        run: pip install feedparser python-dotenv openai
 
-      - name: Send News email
-        run: python Vault/Watchers/email_drafts.py --platform news
+      - name: Generate LinkedIn & Instagram drafts
+        run: |
+          cd Vault/Watchers
+          python scheduled_run.py --platform linkedin instagram
 
-      - name: Commit emailed status back to repo
+      - name: Commit drafts to repo
         run: |
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
-          git add Vault/Needs_Action/
-          git diff --staged --quiet || (git commit -m "chore: mark news drafts as emailed [skip ci]" && git pull --rebase && git push)
+          git add Vault/Needs_Action/ Vault/Completed/ Vault/Plans/
+          git diff --staged --quiet || (git commit -m "chore: add social drafts [skip ci]" && git push)
 
-  send-social-email:
-    name: Send LinkedIn and Instagram Email
-    runs-on: ubuntu-latest
-    needs: generate-content
-    permissions:
-      contents: write
-    env:
-      VAULT_PATH: ${{ github.workspace }}/Vault
-      DRY_RUN: "false"
-      SMTP_HOST: smtp.gmail.com
-      SMTP_PORT: "587"
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      REVIEWER_EMAIL: ${{ secrets.SMTP_USER }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Send LinkedIn & Instagram email
+        run: |
+          cd Vault/Watchers
+          python email_drafts.py --platform linkedin instagram
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install feedparser python-dotenv watchdog requests openai
-
-      - name: Send LinkedIn and Instagram email
-        run: python Vault/Watchers/email_drafts.py --platform linkedin instagram
-
-      - name: Commit emailed status back to repo
+      - name: Commit emailed status
         run: |
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
-          git add Vault/Needs_Action/
-          git diff --staged --quiet || (git commit -m "chore: mark social drafts as emailed [skip ci]" && git pull --rebase && git push)
+          git pull --rebase
+          git add Vault/Needs_Action/ Vault/Completed/
+          git diff --staged --quiet || (git commit -m "chore: mark social as emailed [skip ci]" && git push)
