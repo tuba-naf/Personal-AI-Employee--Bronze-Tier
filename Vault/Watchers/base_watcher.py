@@ -270,16 +270,23 @@ Write a complete, ready-to-publish {platform_style} based on the following sourc
 
 Write the full content now:"""
 
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=2000,
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            self.logger.error(f"OpenAI API error: {e}")
-            return f"_Draft generation failed: {e}_"
+        last_error = None
+        for attempt in range(1, 4):  # retry up to 3 times
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=2000,
+                    timeout=30,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                last_error = e
+                self.logger.warning(f"OpenAI API attempt {attempt}/3 failed: {e}")
+                if attempt < 3:
+                    time.sleep(5 * attempt)  # 5s, 10s back-off
+        self.logger.error(f"OpenAI API failed after 3 attempts: {last_error}")
+        return f"_Draft generation failed after 3 attempts: {last_error}_"
 
     def auto_verify_and_complete(self, filepath: Path) -> bool:
         """Fact-check a draft via OpenAI, mark as verified, and move to /Completed/."""
@@ -311,15 +318,23 @@ Return a brief verification summary in this exact format:
 Draft content:
 {body[:3000]}"""
 
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=400,
-            )
-            verification_result = response.choices[0].message.content
-        except Exception as e:
-            self.logger.error(f"Auto-verification API error: {e}")
+        verification_result = None
+        for attempt in range(1, 4):
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=400,
+                    timeout=30,
+                )
+                verification_result = response.choices[0].message.content
+                break
+            except Exception as e:
+                self.logger.warning(f"Auto-verification attempt {attempt}/3 failed: {e}")
+                if attempt < 3:
+                    time.sleep(5 * attempt)
+        if not verification_result:
+            self.logger.error("Auto-verification failed after 3 attempts")
             return False
 
         # Determine pass/fail from result
