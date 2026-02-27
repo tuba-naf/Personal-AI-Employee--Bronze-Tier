@@ -9,7 +9,7 @@ import logging
 import json
 from pathlib import Path
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from openai import OpenAI
 
@@ -43,6 +43,21 @@ SECONDARY_KEYWORDS = [
     "temperature", "warming", "clean", "toxic", "hazardous",
     "species", "habitat", "nature", "earth", "planet",
 ]
+
+
+def is_article_fresh(entry, max_age_days: int = 7) -> bool:
+    """Return True if the RSS entry was published within the last max_age_days days.
+    If the entry has no parseable date, it is accepted (fail-open)."""
+    published_parsed = getattr(entry, "published_parsed", None)
+    if not published_parsed:
+        return True  # no date info — don't reject it
+    try:
+        import calendar
+        pub_dt = datetime.fromtimestamp(calendar.timegm(published_parsed), tz=timezone.utc)
+        age = datetime.now(tz=timezone.utc) - pub_dt
+        return age <= timedelta(days=max_age_days)
+    except Exception:
+        return True  # if parsing fails, accept the article
 
 
 def is_environment_relevant(text: str, min_primary: int = 1, min_secondary: int = 1) -> bool:

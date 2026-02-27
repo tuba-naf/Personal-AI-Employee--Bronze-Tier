@@ -6,9 +6,11 @@ Designed to be called 2-3 times daily by Windows Task Scheduler.
 
 import sys
 import os
+import json
 import logging
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -34,6 +36,41 @@ ALL_WATCHERS = {
     "news": ("News", NewsWatcher),
 }
 
+# Cooldown: how many hours must pass before generating another draft
+PLATFORM_COOLDOWN_HOURS = {
+    "news": 24,
+    "instagram": 48,
+    "linkedin": 48,
+}
+
+
+def _is_on_cooldown(platform: str, vault_path: str) -> bool:
+    """Return True if this platform already generated a draft within its cooldown window."""
+    state_file = Path(vault_path) / "Watchers" / f".{platform}_state.json"
+    if not state_file.exists():
+        return False
+    try:
+        state = json.loads(state_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False
+    last_draft = state.get("last_draft_date")
+    if not last_draft:
+        return False
+    cooldown_hours = PLATFORM_COOLDOWN_HOURS.get(platform, 24)
+    last_dt = datetime.fromisoformat(last_draft)
+    return datetime.now() - last_dt < timedelta(hours=cooldown_hours)
+
+
+def _save_draft_date(platform: str, vault_path: str):
+    """Record the current datetime as last_draft_date in the platform state file."""
+    state_file = Path(vault_path) / "Watchers" / f".{platform}_state.json"
+    try:
+        state = json.loads(state_file.read_text(encoding="utf-8")) if state_file.exists() else {}
+    except (json.JSONDecodeError, OSError):
+        state = {}
+    state["last_draft_date"] = datetime.now().isoformat()
+    state_file.write_text(json.dumps(state, indent=2), encoding="utf-8")
+
 
 def run_once(platforms=None):
     vault_path = os.getenv("VAULT_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -45,8 +82,13 @@ def run_once(platforms=None):
 
     generated = []
 
-    for name, watcher_class in watchers:
+    for platform_key, (name, watcher_class) in zip(selected, watchers):
         try:
+            if _is_on_cooldown(platform_key, vault_path):
+                cooldown_h = PLATFORM_COOLDOWN_HOURS.get(platform_key, 24)
+                logger.info(f"{name}: Skipping — already generated a draft within the last {cooldown_h}h cooldown.")
+                continue
+
             w = watcher_class(vault_path)
             cycle = w.current_cycle_position
             items = w.check_for_updates()
@@ -56,6 +98,7 @@ def run_once(platforms=None):
                 verified = w.auto_verify_and_complete(fp)
                 w.advance_cycle()
                 w.update_dashboard()
+                _save_draft_date(platform_key, vault_path)
                 generated.append({
                     "platform": name,
                     "file": fp.name,

@@ -22,6 +22,7 @@ from pathlib import Path
 from datetime import datetime
 
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 logging.basicConfig(
@@ -134,7 +135,7 @@ def _urgency_color(urgency: str) -> str:
 def _extract_draft_content(text: str) -> str:
     """Extract only the Draft Content section from a markdown draft file."""
     import re
-    match = re.search(r"^## Draft Content\s*\n", text, re.MULTILINE)
+    match = re.search(r"^## Draft (?:Content|Caption)\s*\n", text, re.MULTILINE)
     if not match:
         return text  # fallback: return full text if section not found
     content_start = match.end()
@@ -192,6 +193,69 @@ def get_verified_count(vault_path: str, platforms: list[str]) -> int:
     return count
 
 
+def _time_of_day(now: datetime) -> str:
+    hour = now.hour
+    if hour < 12:
+        return "morning"
+    if hour < 17:
+        return "afternoon"
+    return "evening"
+
+
+def _generate_wavy_intro(topic: str, platform_label: str, now: datetime) -> tuple[str, str]:
+    """Call OpenAI to generate a warm Wavy greeting and a topic-relevant joke.
+    Returns (greeting_html, joke_html). Falls back to static text if API unavailable."""
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    tod = _time_of_day(now)
+
+    if not api_key:
+        greeting = (
+            f"Good {tod}! I'm Wavy, your AI Employee. "
+            f"I've prepared your {platform_label} content draft on <strong>{topic}</strong> — fresh, verified, and ready for your review. Let's make an impact today! 🌿"
+        )
+        joke = "Why did the solar panel break up with the coal plant? Because it found someone who treated it with more warmth — naturally! ☀️"
+        return greeting, joke
+
+    client = OpenAI(api_key=api_key)
+    prompt = f"""You are Wavy, a warm and witty AI Employee specialising in sustainability and climate content for Pakistan.
+
+Write two things:
+
+1. GREETING: A friendly, energetic Good {tod} message (2-3 sentences). Address your boss directly. Mention you've prepared their {platform_label} content draft about "{topic}". Be enthusiastic but professional. No emojis overload — max 2.
+
+2. JOKE: One short, clever, original joke (2-4 sentences) that is genuinely funny AND relevant to the topic "{topic}" or sustainability/environment in general. It can be a pun, a light observation, or a setup-punchline. Keep it clean and witty.
+
+Reply in exactly this format (no extra text):
+GREETING: <your greeting here>
+JOKE: <your joke here>"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.85,
+        )
+        text = response.choices[0].message.content.strip()
+        greeting, joke = "", ""
+        for line in text.splitlines():
+            if line.startswith("GREETING:"):
+                greeting = line[len("GREETING:"):].strip()
+            elif line.startswith("JOKE:"):
+                joke = line[len("JOKE:"):].strip()
+        if not greeting:
+            greeting = f"Good {tod}! I'm Wavy — your draft on <strong>{topic}</strong> is ready. 🌿"
+        if not joke:
+            joke = "Why don't climate scientists ever argue? Because they always find common ground! 🌍"
+        return greeting, joke
+    except Exception as e:
+        logger.warning(f"Wavy intro generation failed: {e}")
+        return (
+            f"Good {tod}! I'm Wavy, your AI Employee. Your {platform_label} draft on <strong>{topic}</strong> is ready for review. 🌿",
+            "Why don't climate scientists ever argue? Because they always find common ground! 🌍",
+        )
+
+
 def build_email(drafts: list[dict], platforms: list[str], verified_count: int = 0) -> MIMEMultipart:
     """Build a well-formatted HTML email with all pending drafts."""
     msg = MIMEMultipart("alternative")
@@ -205,6 +269,10 @@ def build_email(drafts: list[dict], platforms: list[str], verified_count: int = 
 
     # ── Styles ──────────────────────────────────────────────────────────────
     font = "font-family:'Segoe UI',Arial,sans-serif;"
+
+    # ── Generate Wavy greeting + joke ───────────────────────────────────────
+    first_topic = drafts[0]["metadata"].get("source_title", drafts[0]["cycle_type"].replace("_", " ").title()) if drafts else "sustainability"
+    wavy_greeting, wavy_joke = _generate_wavy_intro(first_topic, platform_label, now)
 
     # ── Build draft cards ──────────────────────────────────────────────────
     draft_cards = ""
@@ -276,12 +344,19 @@ def build_email(drafts: list[dict], platforms: list[str], verified_count: int = 
             </td>
           </tr>
 
-          <!-- Greeting banner -->
+          <!-- Wavy greeting banner -->
           <tr>
-            <td style="background:#358682;padding:14px 32px;">
-              <p style="margin:0;color:#ffffff;font-size:14px;{font}">
-                Hello! Your Personal AI Employee has prepared <strong>{len(drafts)} new content draft{'s' if len(drafts) > 1 else ''}</strong> on <strong>sustainability, climate change, and environmental topics</strong> — verified and ready for your review.
-              </p>
+            <td style="background:#358682;padding:18px 32px;">
+              <p style="margin:0 0 6px 0;color:#d4f0ee;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;{font}">👋 Wavy says</p>
+              <p style="margin:0;color:#ffffff;font-size:15px;line-height:1.6;{font}">{wavy_greeting}</p>
+            </td>
+          </tr>
+
+          <!-- Joke card -->
+          <tr>
+            <td style="background:#f7fffe;padding:16px 32px;border-left:4px solid #358682;border-bottom:1px solid #e8edf2;">
+              <p style="margin:0 0 6px 0;color:#358682;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;{font}">😄 Today's Green Joke</p>
+              <p style="margin:0;color:#2c3e50;font-size:14px;line-height:1.6;font-style:italic;{font}">{wavy_joke}</p>
             </td>
           </tr>
 

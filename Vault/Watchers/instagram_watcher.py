@@ -15,7 +15,7 @@ from datetime import datetime
 
 import feedparser
 from dotenv import load_dotenv
-from base_watcher import BaseWatcher, is_environment_relevant
+from base_watcher import BaseWatcher, is_environment_relevant, is_article_fresh
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -92,7 +92,7 @@ class InstagramWatcher(BaseWatcher):
                     published = entry.get("published", "")
 
                     combined = f"{title} {summary}"
-                    if is_environment_relevant(combined):
+                    if is_environment_relevant(combined) and is_article_fresh(entry):
                         item_id = hashlib.md5(title.encode()).hexdigest()[:12]
                         if item_id not in self.state.get("processed_ids", []):
                             items.append({
