@@ -261,9 +261,12 @@ Write a complete, ready-to-publish {platform_style} based on the following sourc
 **Requirements:**
 {cycle_instructions}
 
-**Important rules:**
+**STRICT CONTENT RULES — violating these will cause the draft to be rejected:**
 - Write {word_target}+ words of actual content — no placeholders or instructions
-- Include real statistics, case studies, and references where relevant
+- ONLY include statistics and figures you are 100% certain are accurate and widely documented — if unsure, describe the situation qualitatively instead
+- DO NOT fabricate or estimate specific numbers, percentages, hectares, MW capacities, or population figures
+- Every specific statistic MUST have a real, named source (e.g. IPCC, Pakistan EPA, World Bank, NDMA)
+- The content MUST be directly relevant to the source article topic — do not invent unrelated case studies
 - Always connect to Pakistan's environmental context
 - Write in a compelling, human voice — not robotic or generic
 - Do NOT include meta-instructions — just the actual post/article
@@ -305,15 +308,23 @@ Write the full content now:"""
                 body = body[end + 3:].strip()
 
         client = OpenAI(api_key=api_key)
-        prompt = f"""You are a fact-checker for an AI content system focused on sustainability and climate change in Pakistan.
+        prompt = f"""You are a strict fact-checker for an AI content system focused on sustainability and climate change in Pakistan.
 
-Review the following draft content. For each factual claim, check if it is plausible and consistent with known facts about Pakistan's environment, climate, and sustainability.
+Review the following draft content with a critical eye. Your job is to REJECT content that contains fabricated or unverifiable statistics.
 
-Return a brief verification summary in this exact format:
+Check each factual claim against these criteria:
+1. Is the specific number/percentage/figure a well-known, documented fact? (e.g. Quaid-e-Azam Solar Park is 500 acres and ~400 MW operational — not 6,500 acres or 1,000 MW)
+2. Does the claim have a real named source cited in the text?
+3. Is the content actually relevant to the source article topic — or did the AI invent unrelated case studies?
+4. Are any statistics suspiciously precise without a source? (e.g. "25% increase in productivity", "5% emissions reduction") — flag these
+
+Return your verdict in EXACTLY this format:
 - Status: Verified OR Needs Review
-- Verified Claims: [count of claims that appear factually sound]
-- Flagged Items: [list any specific claims that seem inaccurate or unverifiable, or write "None"]
-- Notes: [one sentence summary]
+- Verified Claims: [count]
+- Flagged Items: [list each suspicious or wrong statistic specifically, or write "None"]
+- Notes: [one sentence]
+
+IMPORTANT: If ANY specific statistic is unverifiable or appears fabricated, set Status to "Needs Review". Be strict — do not pass content with made-up numbers.
 
 Draft content:
 {body[:3000]}"""
@@ -337,8 +348,15 @@ Draft content:
             self.logger.error("Auto-verification failed after 3 attempts")
             return False
 
-        # Determine pass/fail from result
-        verified = "needs review" not in verification_result.lower()
+        # Determine pass/fail from result — must explicitly say Verified AND have no flagged items
+        result_lower = verification_result.lower()
+        explicitly_verified = "status: verified" in result_lower
+        has_flagged_items = (
+            "flagged items:" in result_lower
+            and "flagged items: none" not in result_lower
+            and "flagged items: n/a" not in result_lower
+        )
+        verified = explicitly_verified and not has_flagged_items
         new_status = "verified" if verified else "needs_review"
 
         # Update frontmatter status
