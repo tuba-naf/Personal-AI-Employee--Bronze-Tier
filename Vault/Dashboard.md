@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-02-26 20:13
+last_updated: 2026-02-28 23:13
 auto_refresh: true
 ---
 
@@ -15,7 +15,7 @@ auto_refresh: true
 |------------|---------|----------|-------|
 | LinkedIn   | 6       | 1        | 7     |
 | Instagram  | 5       | 2        | 7     |
-| News       | 5       | 2        | 7     |
+| News       | 7       | 3        | 10     |
 
 ## Content Rotation Status
 - **Current Cycle Position:** Local Problem
