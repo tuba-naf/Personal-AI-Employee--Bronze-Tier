@@ -265,11 +265,17 @@ Write a complete, ready-to-publish {platform_style} based on the following sourc
 - Write {word_target}+ words of actual content — no placeholders or instructions
 - ONLY include statistics and figures you are 100% certain are accurate and widely documented — if unsure, describe the situation qualitatively instead
 - DO NOT fabricate or estimate specific numbers, percentages, hectares, MW capacities, or population figures
-- Every specific statistic MUST have a real, named source (e.g. IPCC, Pakistan EPA, World Bank, NDMA)
+- Every specific statistic or factual claim MUST have an inline citation like [1], [2] etc.
 - The content MUST be directly relevant to the source article topic — do not invent unrelated case studies
 - Always connect to Pakistan's environmental context
 - Write in a compelling, human voice — not robotic or generic
 - Do NOT include meta-instructions — just the actual post/article
+
+After the article, include a REFERENCES section in this exact format:
+**References:**
+[1] Source Name — full URL or publication name and year
+[2] Source Name — full URL or publication name and year
+(list every reference cited inline)
 
 Write the full content now:"""
 

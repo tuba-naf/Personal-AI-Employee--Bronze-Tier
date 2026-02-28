@@ -133,16 +133,42 @@ def _urgency_color(urgency: str) -> str:
 
 
 def _extract_draft_content(text: str) -> str:
-    """Extract only the Draft Content section from a markdown draft file."""
+    """Extract only the Draft Content section, stripping any inline References block."""
     import re
     match = re.search(r"^## Draft (?:Content|Caption)\s*\n", text, re.MULTILINE)
     if not match:
-        return text  # fallback: return full text if section not found
+        return text
     content_start = match.end()
     next_section = re.search(r"^## ", text[content_start:], re.MULTILINE)
     if next_section:
-        return text[content_start:content_start + next_section.start()].strip()
-    return text[content_start:].strip()
+        content = text[content_start:content_start + next_section.start()].strip()
+    else:
+        content = text[content_start:].strip()
+    # Strip inline References block so it only appears in the references panel
+    content = re.sub(r"\n?\*\*References:\*\*\s*\n(?:\[\d+\].+\n?)*", "", content).strip()
+    return content
+
+
+def _extract_references(text: str) -> str:
+    """Extract References section from draft content (inline References: block or ## Sources & References)."""
+    import re
+    # Try inline References: block inside draft content first
+    match = re.search(r"\*\*References:\*\*\s*\n((?:\[\d+\].+\n?)+)", text)
+    if match:
+        return match.group(0).strip()
+    # Fallback: ## Sources & References section
+    match = re.search(r"^## Sources & References\s*\n", text, re.MULTILINE)
+    if not match:
+        return ""
+    ref_start = match.end()
+    next_section = re.search(r"^## ", text[ref_start:], re.MULTILINE)
+    if next_section:
+        content = text[ref_start:ref_start + next_section.start()].strip()
+    else:
+        content = text[ref_start:].strip()
+    if not content or content.startswith("_[List"):
+        return ""
+    return content
 
 
 def _md_to_simple_html(text: str) -> str:
@@ -292,8 +318,17 @@ def build_email(drafts: list[dict], platforms: list[str], verified_count: int = 
             if end != -1:
                 content_body = content_body[end + 3:].strip()
 
+        references_raw = _extract_references(content_body)
         content_body = _extract_draft_content(content_body)
         content_html = _md_to_simple_html(content_body)
+        references_html = _md_to_simple_html(references_raw) if references_raw else ""
+
+        references_block = f"""
+          <!-- References -->
+          <div style="padding:14px 24px 20px 24px;background:#f8fafc;border-top:1px solid #e8edf2;">
+            <p style="font-size:12px;color:#95a5a6;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;">References</p>
+            <div style="font-size:12px;color:#5d6d7e;line-height:1.8;">{references_html}</div>
+          </div>""" if references_html else ""
 
         draft_cards += f"""
         <div style="background:#ffffff;border:1px solid #e8edf2;border-radius:8px;margin-bottom:30px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
@@ -306,7 +341,7 @@ def build_email(drafts: list[dict], platforms: list[str], verified_count: int = 
           <div style="padding:20px 24px;{font}font-size:14px;color:#34495e;line-height:1.7;">
             <p style="font-size:12px;color:#95a5a6;margin:0 0 14px 0;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;">Draft Content</p>
             {content_html}
-          </div>
+          </div>{references_block}
         </div>
         """
 
