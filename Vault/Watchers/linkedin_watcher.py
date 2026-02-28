@@ -137,9 +137,14 @@ class LinkedInWatcher(BaseWatcher):
 
         return items[:1] if items else []
 
-    def create_content_file(self, item) -> Path:
-        """Create a LinkedIn draft .md file in /Needs_Action/."""
+    def create_content_file(self, item) -> Path | None:
+        """Create a LinkedIn draft .md file in /Needs_Action/. Returns None if generation fails."""
         cycle = self.current_cycle_position
+        draft_content = self.generate_draft_content(item, cycle, "LinkedIn", self._get_cycle_instructions(cycle), 500)
+        if draft_content is None:
+            self.logger.error(f"Skipping draft creation for '{item['title']}' — content generation failed.")
+            return None
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"LINKEDIN_{timestamp}_{item['id']}.md"
         filepath = self.needs_action / filename
@@ -172,7 +177,7 @@ Write a **500+ word** LinkedIn post following the **{cycle.replace('_', ' ').tit
 
 ## Draft Content
 
-{self.generate_draft_content(item, cycle, "LinkedIn", self._get_cycle_instructions(cycle), 500)}
+{draft_content}
 
 ## Verification Checklist
 - [ ] Facts and statistics are accurate and cited

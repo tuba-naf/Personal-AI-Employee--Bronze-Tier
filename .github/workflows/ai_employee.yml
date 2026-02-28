@@ -70,8 +70,8 @@ jobs:
         run: |
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
-          git pull --rebase
           git add Vault/Needs_Action/ Vault/Completed/
+          git pull --rebase
           git diff --staged --quiet || (git commit -m "chore: mark news as emailed [skip ci]" && git push)
 
 # ─────────────────────────────────────────────────────────────
@@ -132,6 +132,6 @@ jobs:
         run: |
           git config user.name "AI Employee Wavy"
           git config user.email "actions@github.com"
-          git pull --rebase
           git add Vault/Needs_Action/ Vault/Completed/
+          git pull --rebase
           git diff --staged --quiet || (git commit -m "chore: mark social as emailed [skip ci]" && git push)

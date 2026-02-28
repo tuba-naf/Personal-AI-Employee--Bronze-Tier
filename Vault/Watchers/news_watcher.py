@@ -138,9 +138,14 @@ class NewsWatcher(BaseWatcher):
 
         return items[:1] if items else []
 
-    def create_content_file(self, item) -> Path:
-        """Create a news draft .md file in /Needs_Action/."""
+    def create_content_file(self, item) -> Path | None:
+        """Create a news draft .md file in /Needs_Action/. Returns None if generation fails."""
         cycle = self.current_cycle_position
+        draft_content = self.generate_draft_content(item, cycle, "News", self._get_cycle_instructions(cycle), 600)
+        if draft_content is None:
+            self.logger.error(f"Skipping draft creation for '{item['title']}' — content generation failed.")
+            return None
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"NEWS_{timestamp}_{item['id']}.md"
         filepath = self.needs_action / filename
@@ -179,7 +184,7 @@ Write a news analysis following the **{cycle.replace('_', ' ').title()}** patter
 
 ## Draft Content
 
-{self.generate_draft_content(item, cycle, "News", self._get_cycle_instructions(cycle), 600)}
+{draft_content}
 
 ## Key Facts to Verify
 - [ ] Statistics cited are from credible environmental sources

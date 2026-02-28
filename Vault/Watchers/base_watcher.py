@@ -286,7 +286,7 @@ Write the full content now:"""
                 if attempt < 3:
                     time.sleep(5 * attempt)  # 5s, 10s back-off
         self.logger.error(f"OpenAI API failed after 3 attempts: {last_error}")
-        return f"_Draft generation failed after 3 attempts: {last_error}_"
+        return None
 
     def auto_verify_and_complete(self, filepath: Path) -> bool:
         """Fact-check a draft via OpenAI, mark as verified, and move to /Completed/."""

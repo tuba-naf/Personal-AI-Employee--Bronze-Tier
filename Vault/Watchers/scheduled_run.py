@@ -94,6 +94,9 @@ def run_once(platforms=None):
             items = w.check_for_updates()
             if items:
                 fp = w.create_content_file(items[0])
+                if fp is None:
+                    logger.error(f"{name}: Draft generation failed (API error). Skipping cycle advance.")
+                    continue
                 w.create_plan_file(fp.name)
                 verified = w.auto_verify_and_complete(fp)
                 w.advance_cycle()

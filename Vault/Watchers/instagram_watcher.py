@@ -136,9 +136,14 @@ class InstagramWatcher(BaseWatcher):
 
         return items[:1] if items else []
 
-    def create_content_file(self, item) -> Path:
-        """Create an Instagram draft .md file in /Needs_Action/."""
+    def create_content_file(self, item) -> Path | None:
+        """Create an Instagram draft .md file in /Needs_Action/. Returns None if generation fails."""
         cycle = self.current_cycle_position
+        draft_content = self.generate_draft_content(item, cycle, "Instagram", self._get_cycle_instructions(cycle), 300)
+        if draft_content is None:
+            self.logger.error(f"Skipping draft creation for '{item['title']}' — content generation failed.")
+            return None
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"INSTA_{timestamp}_{item['id']}.md"
         filepath = self.needs_action / filename
@@ -171,7 +176,7 @@ Write a **300+ word** Instagram caption following the **{cycle.replace('_', ' ')
 
 ## Draft Caption
 
-{self.generate_draft_content(item, cycle, "Instagram", self._get_cycle_instructions(cycle), 300)}
+{draft_content}
 
 ## Suggested Hashtags
 #Pakistan #ClimateAction #Sustainability #Environment #GreenPakistan #SaveEarth #ClimateChange #RenewableEnergy #EcoFriendly
