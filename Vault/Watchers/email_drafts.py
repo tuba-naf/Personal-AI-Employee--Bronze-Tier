@@ -221,7 +221,7 @@ def _generate_wavy_intro(topic: str, platform_label: str, now: datetime) -> tupl
 
 Write two things:
 
-1. GREETING: A friendly, energetic Good {tod} message (2-3 sentences). Address your boss directly. Mention you've prepared their {platform_label} content draft about "{topic}". Be enthusiastic but professional. No emojis overload — max 2.
+1. GREETING: A friendly, energetic Good {tod} message (2-3 sentences). Address TWS members directly. Mention you've prepared their {platform_label} content draft about "{topic}". Be enthusiastic but professional. No emojis overload — max 2.
 
 2. JOKE: One short, clever, original joke (2-4 sentences) that is genuinely funny AND relevant to the topic "{topic}" or sustainability/environment in general. It can be a pun, a light observation, or a setup-punchline. Keep it clean and witty.
 
