@@ -1,6 +1,6 @@
 ---
 platform: News
-status: pending
+status: emailed
 cycle_type: global_hopeful
 scope: global
 topic_suggestion: "Green Hydrogen: The Fuel of the Future and What It Means for Pakistan"
