@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-03-04 00:00
+last_updated: 2026-03-04 17:46
 auto_refresh: true
 ---
 
@@ -15,15 +15,10 @@ auto_refresh: true
 |------------|---------|----------|-------|
 | LinkedIn   | 7       | 1        | 8     |
 | Instagram  | 6       | 2        | 8     |
-| News       | 8       | 3        | 11    |
-
-## Content Rotation Status
-- **Current Cycle Position:** Local Problem
-- **Cycle:** Local Problem → Local Hopeful → Global Problem → Global Hopeful
+| News       | 9       | 3        | 12     |
 
 ## Recent Activity
-- [2026-03-04] 3 Inbox files processed → moved to Needs_Action (LinkedIn, Instagram, News)
-- [2026-02-28] Last automated draft generated via GitHub Actions
+- [2026-03-04 17:46] Dashboard auto-updated by filesystem watcher
 
 ## Folders Quick Links
 - [[Inbox]] — Raw task drops
