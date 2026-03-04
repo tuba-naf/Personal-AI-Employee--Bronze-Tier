@@ -377,17 +377,23 @@ Draft content:
 - **Verified By:** AI Employee (auto)
 - **Verified On:** {now}
 """
-        # Move to /Completed/ if verified, otherwise update in place
+        # Always move to /Needs_Action/ so email can find it.
+        # Verified drafts also go to /Completed/ for archiving.
+        needs_action_dir = self.vault_path / "Needs_Action"
+        needs_action_dir.mkdir(exist_ok=True)
+        dest = needs_action_dir / filepath.name
+        dest.write_text(updated, encoding="utf-8")
+        # Remove original only if it is not already in Needs_Action
+        if filepath.resolve() != dest.resolve():
+            filepath.unlink(missing_ok=True)
+
         if verified:
             completed_dir = self.vault_path / "Completed"
             completed_dir.mkdir(exist_ok=True)
-            dest = completed_dir / filepath.name
-            dest.write_text(updated, encoding="utf-8")
-            filepath.unlink()
-            self.logger.info(f"Auto-verified and moved to /Completed/: {filepath.name}")
+            (completed_dir / filepath.name).write_text(updated, encoding="utf-8")
+            self.logger.info(f"Auto-verified → /Needs_Action/ + /Completed/: {filepath.name}")
         else:
-            filepath.write_text(updated, encoding="utf-8")
-            self.logger.info(f"Auto-verification flagged issues, kept in /Needs_Action/: {filepath.name}")
+            self.logger.info(f"Needs review → /Needs_Action/: {filepath.name}")
 
         return verified
 

@@ -55,6 +55,7 @@ def get_pending_drafts(vault_path: str, platforms: list[str]) -> list[dict]:
     """Collect drafts from /Needs_Action/ and /Completed/ for specified platforms.
     Skips files already marked as emailed."""
     folders = [
+        Path(vault_path) / "Needs_Action",
         Path(vault_path) / "Completed",
     ]
     drafts = []
