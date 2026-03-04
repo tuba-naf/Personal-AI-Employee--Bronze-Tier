@@ -1,6 +1,6 @@
 ---
 platform: Instagram
-status: pending
+status: emailed
 cycle_type: global_problem
 scope: global
 topic_suggestion: "The Great Pacific Garbage Patch — And Why Pakistan's Coastlines Are Next"

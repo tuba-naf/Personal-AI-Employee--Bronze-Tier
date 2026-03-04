@@ -1,6 +1,6 @@
 ---
 platform: LinkedIn
-status: pending
+status: emailed
 cycle_type: local_hopeful
 scope: local
 topic_suggestion: "Pakistan's Billion Tree Tsunami — Reforesting a Climate-Vulnerable Nation"
