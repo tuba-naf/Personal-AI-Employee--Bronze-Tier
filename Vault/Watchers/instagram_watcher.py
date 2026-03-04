@@ -146,7 +146,7 @@ class InstagramWatcher(BaseWatcher):
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"INSTA_{timestamp}_{item['id']}.md"
-        filepath = self.needs_action / filename
+        filepath = self.inbox / filename
 
         content = f"""---
 platform: Instagram

@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-02-28 23:13
+last_updated: 2026-03-04 00:00
 auto_refresh: true
 ---
 
@@ -13,13 +13,17 @@ auto_refresh: true
 ## Pending Content Drafts
 | Platform   | Pending | Verified | Total |
 |------------|---------|----------|-------|
-| LinkedIn   | 6       | 1        | 7     |
-| Instagram  | 5       | 2        | 7     |
-| News       | 7       | 3        | 10     |
+| LinkedIn   | 7       | 1        | 8     |
+| Instagram  | 6       | 2        | 8     |
+| News       | 8       | 3        | 11    |
 
 ## Content Rotation Status
 - **Current Cycle Position:** Local Problem
 - **Cycle:** Local Problem → Local Hopeful → Global Problem → Global Hopeful
+
+## Recent Activity
+- [2026-03-04] 3 Inbox files processed → moved to Needs_Action (LinkedIn, Instagram, News)
+- [2026-02-28] Last automated draft generated via GitHub Actions
 
 ## Folders Quick Links
 - [[Inbox]] — Raw task drops

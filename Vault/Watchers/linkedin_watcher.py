@@ -147,7 +147,7 @@ class LinkedInWatcher(BaseWatcher):
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"LINKEDIN_{timestamp}_{item['id']}.md"
-        filepath = self.needs_action / filename
+        filepath = self.inbox / filename
 
         content = f"""---
 platform: LinkedIn
